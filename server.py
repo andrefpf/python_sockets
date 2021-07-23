@@ -1,10 +1,8 @@
 import os
-from socket import socket, AF_INET, SOCK_STREAM
+import json 
+from socket import socket, timeout, AF_INET, SOCK_STREAM
 from threading import Thread
 from time import time
-
-from config import CONFIG
-
 
 DEFAULT_PORT = 65432
 DEFAULT_MAX_SIZE = 50
@@ -25,16 +23,27 @@ class ClientHandler(Thread):
         self.timeout  = kwargs.get('TIMEOUT',  DEFAULT_TIMEOUT)
         self.path     = kwargs.get('PATH',     DEFAULT_PATH)
 
+        self.running = True
         self.buffer = bytes()
 
     def run(self):
+        self.conn.settimeout(self.timeout)
         with self.conn:
-            while True:
-                data = self.conn.recv(1024)
+            while self.running:
+                try:
+                    data = self.conn.recv(1024)
+                except timeout:
+                    ip, port = self.addr
+                    print(f'Connection {ip}/{port} timed out.')
+                    break 
+
                 if not data:
-                    break
+                    continue
+
                 self.handle_data(data)
+
         self.dump_buffer()
+        self.conn.close()
     
     def handle_data(self, data):
         self.show_data(data)
@@ -76,15 +85,36 @@ def start_server(**kwargs):
         sock.listen()
 
         clients = []
-        while True:
-            conn, addr = sock.accept()
-            client = ClientHandler(conn, addr)
-            client.start()
-            clients.append(client)
+        try:
+            while True:
+                conn, addr = sock.accept()
+                client = ClientHandler(conn, addr)
+                client.start()
+                clients.append(client)
+        except KeyboardInterrupt:
+            print()
         
         for client in clients:
-            client.join()
+            client.running = False
 
+        print('Waiting for clients to finish connection.')
+
+        for client in clients:
+            client.join()
+        
+        print('Disconecting Server.')
+
+
+def read_config(path):
+    config = dict()
+    try:
+        with open(path) as file:
+            config = json.load(file)
+    except FileNotFoundError:
+        print(f'Config file not found in {path}')
+        print('Using default parameters.')
+    return config
 
 if __name__ == '__main__':
-    start_server(**CONFIG)
+    config = read_config('config.json')
+    start_server(**config)
