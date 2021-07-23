@@ -21,6 +21,18 @@ Simple python server using sockets.
   "FILENAME" is the preffix of the files to be created.
   "PATH" is the directory you want to save the created files
 
+# Execute
+  To run the server just type in a terminal:
+  `
+  python server.py
+  `
+  
+  If you want to run a simple (and not very functional) client in order to test this you can type in another terminal:
+  `
+  python client.py
+  `
+  
+
 # What you must deliver after the challenge is completed:
 
 ## 1) Source code of everything that was developed, whether the software is working or not;
