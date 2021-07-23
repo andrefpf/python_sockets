@@ -1,8 +1,8 @@
 from socket import socket, AF_INET, SOCK_STREAM
-from time import sleep
+from config import CONFIG
 
 HOST = '127.0.0.1'
-PORT = 2021
+PORT = CONFIG.get('PORT', 65432)
 
 with socket(AF_INET, SOCK_STREAM) as s:
     s.connect((HOST, PORT))
